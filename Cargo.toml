@@ -1,0 +1,12 @@
+[package]
+name = "recipe"
+version = "0.1.0"
+edition = "2024"
+
+license = "MIT OR Apache-2.0"
+description = "High-assurance composition and cryptographic manifest orchestration. Defines the blueprints and deterministic procedures for the Honest-Classified security ecosystem."
+
+authors = ["James Hunt <jameshuntdevelopment@gmail.com>"]
+repository = "https://github.com/jameshuntt/recipe"
+
+[dependencies]
