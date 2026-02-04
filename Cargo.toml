@@ -1,12 +1,37 @@
 [package]
 name = "recipe"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 
 license = "MIT OR Apache-2.0"
-description = "High-assurance composition and cryptographic manifest orchestration. Defines the blueprints and deterministic procedures for the Honest-Classified security ecosystem."
+description = "Dynamic binary composition and low level manifest orchestration. Defines the blueprints and deterministic procedures for the Honest-Classified security ecosystem."
 
 authors = ["James Hunt <jameshuntdevelopment@gmail.com>"]
 repository = "https://github.com/jameshuntt/recipe"
 
+[features]
+# The 'default' set includes all stable parsers. 
+# For restricted environments, disable-default-features and pick specific modules.
+default = ["signed", "unsigned", "float", "composite", "network"]
+
+# Feature Gating: 
+# These flags control the conditional compilation of the ParserRegistry.
+network = []    # Enables Ipv4, Ipv6, and MacAddress parsers
+signed = []     # Enables i8 through i64 parsers
+unsigned = []   # Enables u8 through u64 parsers
+float = []      # Enables f32 and f64 (IEEE 754) parsers
+composite = []  # Enables Struct and Array recursive parsers
+
 [dependencies]
+# Serialization/Deserialization for the Ingredient blueprints
+serde = { version = "1.0.219", features = ["derive"] }
+
+# Thread-safe initialization for the ParserRegistry
+once_cell = "1.21.3"
+
+# Hexadecimal utilities for debug-printing raw bitstreams
+hex = "0.4.3"
+
+# Standard logging facade for system forensics
+env_logger = "0.11.8"
+log = "0.4.26"
