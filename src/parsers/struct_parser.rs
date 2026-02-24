@@ -72,3 +72,106 @@ impl StructParser {
         Ok(IngredientValue::Struct(struct_results))
     }
 }
+
+
+#[cfg(feature = "unsigned")]
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::{Length, Offset};
+
+    #[test]
+    fn test_struct_parser_recursive_nesting() {
+        let parser = StructParser::default();
+
+        // 1. Define Child Ingredients
+        let child1 = Ingredient {
+            name: "id".to_string(),
+            format: "u8".to_string(),
+            offset: Offset(0),
+            length: Length(1),
+            ..Default::default()
+        };
+
+        let child2 = Ingredient {
+            name: "val".to_string(),
+            format: "u8".to_string(),
+            offset: Offset(1),
+            length: Length(1),
+            ..Default::default()
+        };
+
+        // 2. Define Parent Struct
+        let parent = Ingredient {
+            name: "header".to_string(),
+            format: "struct".to_string(),
+            children: Some(vec![child1, child2]),
+            ..Default::default()
+        };
+
+        let data = vec![0xAA, 0xBB];
+        
+        // 3. Execute standard recursive parse
+        let result = parser.parse(&data, &parent).expect("Parse failed");
+
+        if let IngredientValue::Struct(map) = result {
+            assert_eq!(map.len(), 2);
+            assert_eq!(map.get("id").unwrap(), &IngredientValue::U8(0xAA));
+            assert_eq!(map.get("val").unwrap(), &IngredientValue::U8(0xBB));
+        } else {
+            panic!("Expected IngredientValue::Struct");
+        }
+    }
+
+    #[test]
+    fn test_parse_struct_static_with_namespacing() {
+        // This tests the static method that uses parse_table
+        let child = Ingredient {
+            name: "inner_field".to_string(),
+            format: "u8".to_string(),
+            offset: Offset(0),
+            length: Length(1),
+            ..Default::default()
+        };
+
+        let parent = Ingredient {
+            name: "parent_node".to_string(),
+            format: "struct".to_string(),
+            children: Some(vec![child]),
+            ..Default::default()
+        };
+
+        let data = vec![0x42];
+
+        // Execute static parse_struct which uses dot-notation
+        let result = StructParser::parse_struct(&data, &parent).expect("Static parse failed");
+
+        if let IngredientValue::Struct(map) = result {
+            // Because parse_struct calls parse_table(..., &ingredient.name, ...),
+            // the key should be "parent_node.inner_field"
+            let expected_key = "parent_node.inner_field";
+            assert!(map.contains_key(expected_key), "Missing namespaced key: {}", expected_key);
+            assert_eq!(map.get(expected_key).unwrap(), &IngredientValue::U8(0x42));
+        } else {
+            panic!("Expected IngredientValue::Struct");
+        }
+    }
+
+    #[test]
+    fn test_struct_missing_children_error() {
+        let parser = StructParser::default();
+        let invalid_struct = Ingredient {
+            name: "broken".to_string(),
+            format: "struct".to_string(),
+            children: None, // Missing instructions
+            ..Default::default()
+        };
+
+        let result = parser.parse(&[0x00], &invalid_struct);
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            RecipeError::InvalidConfig(msg) => assert!(msg.contains("without children")),
+            _ => panic!("Expected InvalidConfig error"),
+        }
+    }
+}

@@ -1,3 +1,46 @@
+macro_rules! impl_swizzle_parser {
+    ($name:ident, $type:ty, $variant:path) => {
+        pub struct $name {
+            pub name: String,
+            pub pattern: Vec<usize>, // e.g., [1, 0, 3, 2]
+        }
+
+        impl $crate::traits::IngredientParser for $name {
+            fn parse(
+                &self,
+                data: &[u8],
+                ingredient: &$crate::ingredient::Ingredient,
+            ) -> Result<$crate::ingredient_value::IngredientValue, $crate::error::RecipeError> {
+                let size = std::mem::size_of::<$type>();
+                let (start, end) = $crate::parsers::calculate_bounds(data, ingredient)?;
+                let slice = &data[start..end];
+
+                // Safety: We've already validated the slice length via calculate_bounds.
+                // We now manually map the bytes based on the user's custom pattern.
+                let mut val: $type = 0;
+                unsafe {
+                    let val_ptr = &mut val as *mut $type as *mut u8;
+                    for (i, &byte_idx) in self.pattern.iter().enumerate() {
+                        // Ensure the pattern doesn't point outside the size of the type
+                        if i < size && byte_idx < size {
+                            *val_ptr.add(i) = *slice.get_unchecked(byte_idx);
+                        }
+                    }
+                }
+
+                Ok($variant(val))
+            }
+        }
+    };
+}
+
+// Example usage for a "Middle-Endian" 32-bit integer:
+impl_swizzle_parser!(
+    U32SwizzleParser,
+    u32,
+    crate::ingredient_value::IngredientValue::U32
+);
+
 /// The Deterministic Initialization Engine.
 ///
 /// `impl_newtype_default!` is a utility macro that automates the implementation 

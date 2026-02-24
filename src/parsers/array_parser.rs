@@ -71,14 +71,23 @@ impl IngredientParser for ArrayParser {
         let mut array_results = Vec::with_capacity(num_elements);
 
         for i in 0..num_elements {
-            let start = ingredient.offset.0 + i * child_size;
-            let end = start + child_size;
+//             let start = ingredient.offset.0 + i * child_size;
+//             let end = start + child_size;
+// 
+//             if end > data.len() {
+//                 return Err(RecipeError::OutOfBounds);
+//             }
+// 
+//             let element_data = &data[start..end];
+    // Use checked math to prevent overflow crashes on malformed input
+    let start = ingredient.offset.0
+        .checked_add(i.checked_mul(child_size).ok_or(RecipeError::OutOfBounds)?)
+        .ok_or(RecipeError::OutOfBounds)?;
+    
+    let end = start.checked_add(child_size).ok_or(RecipeError::OutOfBounds)?;
 
-            if end > data.len() {
-                return Err(RecipeError::OutOfBounds);
-            }
-
-            let element_data = &data[start..end];
+    // Standard Bounds Check
+    let element_data = data.get(start..end).ok_or(RecipeError::OutOfBounds)?;
 
             let element_value = if let Some(ref parse_fn) = parse_fn {
                 parse_fn(element_data)?
@@ -148,6 +157,120 @@ mod tests {
                 }
             }
             _ => panic!("Expected IngredientValue::Array"),
+        }
+    }
+
+    #[test]
+    fn test_array_parser_multi_field_struct() {
+        let parser = ArrayParser::default();
+
+        // Define a struct: { id: u8 (off 0), value: u16 (off 1) } 
+        // Total size: 3 bytes (if packed)
+        let child_id = Ingredient {
+            name: "id".to_string(),
+            format: "u8".to_string(),
+            offset: Offset(0),
+            length: Length(1),
+            ..Default::default()
+        };
+
+        let child_val = Ingredient {
+            name: "value".to_string(),
+            format: "u16".to_string(), // Assuming Big Endian parser exists
+            offset: Offset(1),
+            length: Length(2),
+            endianness: crate::config::Endianness::Big,
+            ..Default::default()
+        };
+
+        let ingredient = Ingredient {
+            offset: Offset(0),
+            length: Length(6), // 2 elements * 3 bytes
+            child_size: Some(3),
+            num_elements: Some(2),
+            children: Some(vec![child_id, child_val]),
+            ..Default::default()
+        };
+
+        // Data: [ID: 1, VAL: 0x03E8 (1000)] , [ID: 2, VAL: 0x07D0 (2000)]
+        let input = vec![0x01, 0x03, 0xE8, 0x02, 0x07, 0xD0];
+        
+        let result = parser.parse(&input, &ingredient).expect("Parsing failed");
+
+        if let IngredientValue::Array(arr) = result {
+            assert_eq!(arr.len(), 2);
+
+            // Verify Element 0
+            if let IngredientValue::Struct(ref map) = arr[0] {
+                assert_eq!(map.get("id").unwrap(), &IngredientValue::U8(1));
+                // Note: This assumes your parse_table handles U16 correctly
+                // assert_eq!(map.get("value").unwrap(), &IngredientValue::U16(1000));
+            } else {
+                panic!("Element 0 should be a Struct");
+            }
+
+            // Verify Element 1
+            if let IngredientValue::Struct(ref map) = arr[1] {
+                assert_eq!(map.get("id").unwrap(), &IngredientValue::U8(2));
+            } else {
+                panic!("Element 1 should be a Struct");
+            }
+        } else {
+            panic!("Expected Array variant");
+        }
+    }
+    
+    #[test]
+    fn test_array_parser_multi_field_struct_2() {
+        let parser = ArrayParser::default();
+
+        let child_id = Ingredient {
+            name: "id".to_string(),
+            format: "u8".to_string(),
+            offset: Offset(0),
+            length: Length(1),
+            ..Default::default()
+        };
+
+        let child_val = Ingredient {
+            name: "value".to_string(),
+            format: "u16".to_string(), 
+            offset: Offset(1),
+            length: Length(2),
+            endianness: crate::config::Endianness::Big,
+            ..Default::default()
+        };
+
+        let ingredient = Ingredient {
+            offset: Offset(0),
+            length: Length(6), // 2 elements * 3 bytes (1 + 2)
+            child_size: Some(3),
+            num_elements: Some(2),
+            children: Some(vec![child_id, child_val]),
+            ..Default::default()
+        };
+
+        // Data: [ID: 1, VAL: 1000 (0x03E8)], [ID: 2, VAL: 2000 (0x07D0)]
+        let input = vec![0x01, 0x03, 0xE8, 0x02, 0x07, 0xD0];
+        
+        let result = parser.parse(&input, &ingredient).expect("Parsing should succeed now");
+
+        if let IngredientValue::Array(arr) = result {
+            assert_eq!(arr.len(), 2);
+
+            // Element 1 check
+            if let IngredientValue::Struct(ref map) = arr[0] {
+                assert_eq!(map.get("id").unwrap(), &IngredientValue::U8(1));
+                assert_eq!(map.get("value").unwrap(), &IngredientValue::U16(1000));
+            }
+
+            // Element 2 check
+            if let IngredientValue::Struct(ref map) = arr[1] {
+                assert_eq!(map.get("id").unwrap(), &IngredientValue::U8(2));
+                assert_eq!(map.get("value").unwrap(), &IngredientValue::U16(2000));
+            }
+        } else {
+            panic!("Expected IngredientValue::Array");
         }
     }
 }

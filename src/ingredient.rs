@@ -5,6 +5,7 @@ use crate::{
     error::RecipeError,
     ingredient_value::IngredientValue,
     parser_registry::ParserRegistry,
+    parsers::GLOBAL_REGISTRY,
     types::{Length, Offset}
 };
 
@@ -67,7 +68,8 @@ impl Ingredient {
     /// For high-throughput scenarios (500k+ packets), it is recommended to 
     /// pass a pre-allocated `ParserRegistry` instead of creating one per call.
     pub fn parse(&self, data: &[u8]) -> Result<IngredientValue, RecipeError> {
-        ParserRegistry::new().parse_ingredient(data, self)
+        // ParserRegistry::new().parse_ingredient(data, self)
+        GLOBAL_REGISTRY.parse_ingredient(data, self)
     }
     
     /// Verifies that the requested `format` exists within the current "Registry of Knowledge."

@@ -185,13 +185,14 @@ dependencies = [
 
 [[package]]
 name = "recipe"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "env_logger",
  "hex",
  "log",
  "once_cell",
  "serde",
+ "simple_impl",
 ]
 
 [[package]]
@@ -252,6 +253,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "simple_impl"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dbb24434fc127f8f909ce217b16401e122e850d8c419a3cded3a6081d7542f5e"
 
 [[package]]
 name = "syn"

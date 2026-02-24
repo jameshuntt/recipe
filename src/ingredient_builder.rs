@@ -25,6 +25,23 @@ pub struct IngredientBuilder {
     endianness: Endianness
 }
 
+impl Default for IngredientBuilder {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            offset: Offset(0),
+            length: Length(0),
+            format: String::new(),
+            max_length: None,
+            children: None,
+            child_size: None,
+            num_elements: None,
+            default: None,
+            endianness: Endianness::Little
+        }
+    }
+}
+
 impl IngredientBuilder {
     /// Convenience method for setting the start boundary using raw primitives.
     ///

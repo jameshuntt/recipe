@@ -1,6 +1,6 @@
 [package]
 name = "recipe"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 
 license = "MIT OR Apache-2.0"
@@ -35,3 +35,5 @@ hex = "0.4.3"
 # Standard logging facade for system forensics
 env_logger = "0.11.8"
 log = "0.4.26"
+
+simple_impl = "0.1.5"

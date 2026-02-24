@@ -1,4 +1,4 @@
-use std::{collections::HashMap};
+use std::{collections::HashMap, sync::LazyLock};
 use crate::{
     config::Config,
     error::RecipeError,
@@ -7,6 +7,14 @@ use crate::{
     parser_registry::ParserRegistry,
     types::{Length, PacketResult, RecipeResult}
 };
+
+// This lives in "Static" memory. It is NOT on the stack.
+// It is only initialized the very first time someone touches it.
+pub static GLOBAL_REGISTRY: LazyLock<ParserRegistry> = LazyLock::new(|| {
+    let mut r = ParserRegistry::new();
+    // Register your standard parsers here (u8, u32, ipv4, etc.)
+    r
+});
 
 /// A specialized utility for quick IPv4 string reconstruction.
 /// 
@@ -49,11 +57,12 @@ pub fn parse_table(
     data: &[u8], 
     ingredient: &Ingredient, 
     prefix: &str, 
+    // r: &ParserRegistry, // Pass reference instead of new()
     results: &mut HashMap<String, IngredientValue>
 ) -> RecipeResult<()> {
     // Note: Instantiating the registry here ensures we have the latest
     // feature-gated parsers available for this specific lens operation.
-    let r = ParserRegistry::new();
+    // let r = ParserRegistry::new();
     
     // Construct the dot-notated path key.
     let key = if prefix.is_empty() {
@@ -61,7 +70,7 @@ pub fn parse_table(
     } else {
         format!("{}.{}", prefix, ingredient.name)
     };
-
+let r = &GLOBAL_REGISTRY;
     // DISPATCH LOGIC:
     // We treat 'array' and 'struct' as recursive containers, 
     // while all other formats are treated as leaf-node primitives.
