@@ -1,12 +1,12 @@
 [package]
 name = "recipe"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 
 license = "MIT OR Apache-2.0"
 description = "Dynamic binary composition and low level manifest orchestration. Defines the blueprints and deterministic procedures for the Honest-Classified security ecosystem."
 
-authors = ["James Hunt <jameshuntdevelopment@gmail.com>"]
+authors = ["James Hunt <james@1o.business>"]
 repository = "https://github.com/jameshuntt/recipe"
 
 [features]

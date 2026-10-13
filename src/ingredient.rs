@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     config::Endianness,
@@ -8,6 +8,13 @@ use crate::{
     parsers::GLOBAL_REGISTRY,
     types::{Length, Offset}
 };
+
+/// Default upper bound for nested Ingredient schemas.
+///
+/// This prevents malformed or accidentally self-similar schemas from recursing
+/// until the process aborts with a stack overflow. The value is intentionally
+/// generous for protocol schemas while still catching runaway trees.
+pub const DEFAULT_MAX_INGREDIENT_DEPTH: usize = 128;
 
 /// The fundamental Descriptor for a data segment.
 ///
@@ -19,7 +26,7 @@ use crate::{
 /// This structure is highly flexible, supporting both primitive scalars (integers, strings)
 /// and complex, nested recursive structures (arrays, structs) through its `children` 
 /// and `format` properties.
-#[derive(Deserialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct Ingredient {
     /// The semantic identifier for this field. Used as the key in the final `PacketResult`.
     pub name: String,
@@ -68,8 +75,40 @@ impl Ingredient {
     /// For high-throughput scenarios (500k+ packets), it is recommended to 
     /// pass a pre-allocated `ParserRegistry` instead of creating one per call.
     pub fn parse(&self, data: &[u8]) -> Result<IngredientValue, RecipeError> {
-        // ParserRegistry::new().parse_ingredient(data, self)
+        self.validate_tree_depth(DEFAULT_MAX_INGREDIENT_DEPTH)?;
         GLOBAL_REGISTRY.parse_ingredient(data, self)
+    }
+
+    /// Validates that this ingredient tree is finite and shallow enough to parse safely.
+    ///
+    /// The check is iterative instead of recursive, so the validator itself cannot
+    /// overflow the stack while inspecting a very deep schema.
+    pub fn validate_tree_depth(&self, max_depth: usize) -> Result<(), RecipeError> {
+        let mut stack = vec![(self, 0usize)];
+
+        while let Some((node, depth)) = stack.pop() {
+            if depth > max_depth {
+                return Err(RecipeError::InvalidConfig(format!(
+                    "Ingredient tree exceeds maximum depth of {} at '{}'",
+                    max_depth, node.name
+                )));
+            }
+
+            if node.format == "array" && node.child_size == Some(0) {
+                return Err(RecipeError::InvalidConfig(format!(
+                    "Array ingredient '{}' has child_size=0",
+                    node.name
+                )));
+            }
+
+            if let Some(children) = &node.children {
+                for child in children {
+                    stack.push((child, depth + 1));
+                }
+            }
+        }
+
+        Ok(())
     }
     
     /// Verifies that the requested `format` exists within the current "Registry of Knowledge."

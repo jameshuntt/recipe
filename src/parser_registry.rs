@@ -101,6 +101,8 @@ impl ParserRegistry {
         data: &[u8],
         ing: &Ingredient
     ) -> RecipeResult<IngredientValue> {
+        ing.validate_tree_depth(crate::ingredient::DEFAULT_MAX_INGREDIENT_DEPTH)?;
+
         if self.contains(&ing.format) {
             self.parse(&ing.format, data, ing)
         } else {

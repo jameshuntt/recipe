@@ -1,2 +1,3 @@
 /target
-/bundle.txt
+Cargo.lock
+.DS_Store

@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// A type-safe representation of an IEEE 802 48-bit Media Access Control (MAC) address.
 ///
@@ -9,7 +9,7 @@ use serde::Deserialize;
 ///
 /// By wrapping the raw `[u8; 6]`, we provide a semantic boundary that distinguishes 
 /// hardware addresses from arbitrary binary blobs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub struct MacAddress(pub [u8; 6]);
 
 impl From<[u8; 6]> for MacAddress {

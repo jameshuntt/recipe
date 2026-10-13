@@ -85,11 +85,22 @@ impl RecipeBuilder {
 
     /// COMMIT POINT: Moves the staged entry into the permanent Body collection.
     ///
-    /// This acts as a transactional boundary, ensuring that only "Started" 
-    /// entries can be pushed into the final configuration.
+    /// This acts as a transactional boundary, ensuring that only complete entries
+    /// can be pushed into the final configuration. A staged entry must have both
+    /// a timestamp lens and a value lens before it is committed.
     pub fn add_entry(mut self) -> Result<Self, RecipeError> {
         if let Some(entry) = self.current_entry.take() {
-            // Note: Deep validation is deferred until the final .build() call.
+            if entry.timestamp.length.0 == 0 {
+                return Err(RecipeError::InvalidConfig(
+                    "Entry timestamp length must be greater than zero".to_string(),
+                ));
+            }
+            if entry.value.length.0 == 0 {
+                return Err(RecipeError::InvalidConfig(
+                    "Entry value length must be greater than zero".to_string(),
+                ));
+            }
+
             self.body.entries.push(entry);
             Ok(self)
         } else {
@@ -181,12 +192,21 @@ mod tests {
             .format("u8")
             .build();
 
+        let entry_timestamp = IngredientBuilder::new()
+            .name("entry_timestamp")
+            .offset_bytes(8)
+            .length_bytes(4)
+            .format("u8")
+            .build();
+
         let config = RecipeBuilder::new()
             .header("MAGIC", 0, 128)
             .add_ingredient_to_body(timestamp.clone())
             .new_entry(0)
             .unwrap()
             .ingredient_to_entry(value.clone())
+            .unwrap()
+            .timestamp_to_entry(entry_timestamp)
             .unwrap()
             .add_entry()
             .unwrap()
@@ -245,11 +265,8 @@ mod tests {
             .timestamp_to_entry(entry_timestamp) // ✅ otherwise it fails on length == 0
             .unwrap();
 
-        // let result = builder.add_entry();
-        // assert!(result.is_err()); // Still valid because we're missing value
-
-
-        // Missing value set for entry
+        // Missing value set for entry. The commit gate should reject this
+        // before an incomplete entry leaks into the final Config.
         let result = builder.add_entry();
         assert!(result.is_err());
     }

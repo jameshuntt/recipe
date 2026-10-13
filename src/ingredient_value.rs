@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 #[cfg(feature = "network")]
 use std::net::{Ipv4Addr, Ipv6Addr};
@@ -18,7 +18,7 @@ use crate::types::MacAddress;
 /// embedded systems or high-frequency trading taps), this enum uses 
 /// conditional compilation (`#[cfg]`). You only pay the memory cost for 
 /// the types your specific "Recipe" actually uses.
-#[derive(Debug, PartialEq, Deserialize, Clone)]
+#[derive(Debug, PartialEq, Deserialize, Serialize, Clone)]
 pub enum IngredientValue {
     // -------------------------------------------------------------------------
     // SIGNED NUMERICS: Integer math with polarity.

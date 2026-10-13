@@ -124,7 +124,7 @@ mod tests {
         let data = &[0x01]; // too short
         let ing = ingredient(0, 2, Endianness::Little);
         let err = parser.parse(data, &ing).unwrap_err();
-        matches!(err, RecipeError::OutOfBounds { .. });
+        matches!(err, RecipeError::OutOfBounds);
     }
 
     #[test]
@@ -133,7 +133,7 @@ mod tests {
         let data = &[0x00, 0x00, 0x00, 0x00];
         let ing = ingredient(0, 3, Endianness::Big); // mismatch
         let err = parser.parse(data, &ing).unwrap_err();
-        matches!(err, RecipeError::InvalidLength { .. });
+        matches!(err, RecipeError::InvalidLength);
     }
 
 
@@ -174,7 +174,7 @@ mod tests {
         assert!(result.is_err());
 
         match result {
-            Err(RecipeError::OutOfBounds { .. }) => {}
+            Err(RecipeError::OutOfBounds) => {}
             _ => panic!("Expected SliceOutOfBounds error"),
         }
     }
@@ -195,7 +195,7 @@ mod tests {
         assert!(result.is_err());
 
         match result {
-            Err(RecipeError::InvalidLength { .. }) => {}
+            Err(RecipeError::InvalidLength) => {}
             _ => panic!("Expected InvalidLength error"),
         }
     }

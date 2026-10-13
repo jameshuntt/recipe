@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     types::{Length, MagicNumber, Offset},
@@ -12,7 +12,7 @@ use crate::{
 ///
 /// This structure is designed to be deserialized from external formats (like XML/JSON),
 /// allowing for dynamic protocol redefinition without recompiling the core engine.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Config {
     /// The structural metadata and identity anchor for the packet/schema.
     pub header: Header,
@@ -24,7 +24,7 @@ pub struct Config {
 ///
 /// The `Header` defines the physical boundaries and the `MagicNumber` required
 /// to initiate a lensing operation. It acts as the "Gatekeeper" for the parser.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Header {
     /// The protocol-specific identifier used to verify schema compatibility.
     pub magic_number: MagicNumber,
@@ -39,7 +39,7 @@ pub struct Header {
 /// This structure defines how the "Lenses" should be applied to the data segment
 /// following the header. It supports both flat metadata (timestamp) and 
 /// recursive or iterative data structures (entries).
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Body {
     /// The primary temporal anchor for the entire payload.
     /// This uses the `Ingredient` model to define its own parsing rules.
@@ -53,7 +53,7 @@ pub struct Body {
 /// `Entry` represents a specific window of situational awareness. It defines 
 /// an offset-relative data point, allowing the engine to jump precisely 
 /// to the location of a value without scanning the entire stream (O(1) access).
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Entry {
     /// The absolute or relative displacement where this specific entry begins.
     pub offset: Offset,
@@ -69,7 +69,7 @@ pub struct Entry {
 /// In high-assurance environments, mixed-endianness can lead to catastrophic 
 /// data corruption. This enum ensures that the "Lenses" apply the correct 
 /// CPU-level bit-shuffling based on the protocol's definition.
-#[derive(Deserialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub enum Endianness {
     /// Standard for X86 and most modern memory models.
     #[default]

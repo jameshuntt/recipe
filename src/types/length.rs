@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use crate::error::RecipeError;
 
 /// A domain-specific primitive representing the spatial extent of a data segment.
@@ -11,7 +11,7 @@ use crate::error::RecipeError;
 /// By using `#[repr(transparent)]`, we ensure that this safety wrapper has zero 
 /// runtime overhead compared to a raw `usize`, while providing compile-time 
 /// boundary enforcement.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 #[repr(transparent)]
 pub struct Length(pub usize);
 

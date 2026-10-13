@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// A globally unique identifier used to facilitate protocol-level 'handshaking' 
 /// and schema validation.
@@ -12,7 +12,7 @@ use serde::Deserialize;
 /// By using `#[repr(transparent)]`, this wrapper ensures that the underlying 
 /// `String` is handled with zero abstraction overhead while maintaining 
 /// strict type-level isolation from regular text data.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[repr(transparent)]
 pub struct MagicNumber(pub String);
 

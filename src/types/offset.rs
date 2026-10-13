@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// A type-safe representation of a memory-relative displacement (Address Offset).
 ///
@@ -11,7 +11,7 @@ use serde::Deserialize;
 /// By utilizing `#[repr(transparent)]`, we maintain the performance of a raw `usize` 
 /// while enforcing a type-boundary that prevents developers from accidentally 
 /// using a `Length` as an `Offset` (a common source of "Off-by-One" security vulnerabilities).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 #[repr(transparent)]
 pub struct Offset(pub usize);
 

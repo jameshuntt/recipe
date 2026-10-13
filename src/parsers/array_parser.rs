@@ -40,10 +40,16 @@ impl IngredientParser for ArrayParser {
         data: &[u8],
         ingredient: &Ingredient,
     ) -> Result<IngredientValue, RecipeError> {
-        // Required: child element size
+        // Required: child element size. A zero stride would either divide by zero
+        // or loop without making spatial progress, so reject it as schema invalid.
         let child_size = ingredient.child_size.ok_or(RecipeError::InvalidConfig(
             "Missing child_size for array".to_string(),
         ))?;
+        if child_size == 0 {
+            return Err(RecipeError::InvalidConfig(
+                "Array child_size must be greater than zero".to_string(),
+            ));
+        }
 
         // Number of array elements
         let num_elements = ingredient
@@ -271,6 +277,73 @@ mod tests {
             }
         } else {
             panic!("Expected IngredientValue::Array");
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod recursion_safety_tests {
+    use super::*;
+    use crate::types::{Length, Offset};
+
+    #[test]
+    fn rejects_zero_child_size_without_panicking() {
+        let ingredient = Ingredient {
+            name: "bad_array".to_string(),
+            format: "array".to_string(),
+            child_size: Some(0),
+            num_elements: None,
+            offset: Offset(0),
+            length: Length(1),
+            children: Some(vec![Ingredient {
+                name: "field".to_string(),
+                format: "u8".to_string(),
+                offset: Offset(0),
+                length: Length(1),
+                ..Default::default()
+            }]),
+            ..Default::default()
+        };
+
+        let err = ArrayParser::default().parse(&[0], &ingredient).unwrap_err();
+        match err {
+            RecipeError::InvalidConfig(message) => {
+                assert!(message.contains("child_size"));
+            }
+            other => panic!("expected InvalidConfig, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn rejects_excessive_schema_depth_before_recursive_parse() {
+        let mut current = Ingredient {
+            name: "leaf".to_string(),
+            format: "u8".to_string(),
+            offset: Offset(0),
+            length: Length(1),
+            ..Default::default()
+        };
+
+        for i in 0..140 {
+            current = Ingredient {
+                name: format!("level_{}", i),
+                format: "array".to_string(),
+                offset: Offset(0),
+                length: Length(1),
+                child_size: Some(1),
+                num_elements: Some(1),
+                children: Some(vec![current]),
+                ..Default::default()
+            };
+        }
+
+        let err = current.parse(&[0]).unwrap_err();
+        match err {
+            RecipeError::InvalidConfig(message) => {
+                assert!(message.contains("maximum depth"));
+            }
+            other => panic!("expected InvalidConfig, got {:?}", other),
         }
     }
 }
