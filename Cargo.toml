@@ -2,6 +2,7 @@
 name = "recipe"
 version = "0.1.4"
 edition = "2024"
+rust-version = "1.85"
 
 license = "MIT OR Apache-2.0"
 description = "Dynamic binary composition and low level manifest orchestration. Defines the blueprints and deterministic procedures for the Honest-Classified security ecosystem."

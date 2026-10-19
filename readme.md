@@ -77,3 +77,8 @@ When extending the framework, follow the **Macro-First Principle**:
 3. **Validation**: Every new `Ingredient` type must have a length check using the `require_length_for!` macro to maintain jurisdictional integrity.
 
 > **Staff Engineer Note**: The `ParserRegistry` is designed to be a singleton or a long-lived resource. Because parsers are stateless and implement `Send + Sync`, the registry can be safely shared across your high-concurrency ingestion pipelines.
+
+## Releasing
+
+Bump `version` in Cargo.toml, add a dated `## <version> (YYYY-MM-DD)` entry to CHANGELOG.md, and push to
+`main`. CI (.github/workflows/ci.yml) runs the tests and clippy, then publishes that version to crates.io.
